@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.os.Build;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
@@ -34,6 +35,9 @@ public class ShineButton extends PorterShapeImageView {
     int DEFAULT_WIDTH = 50;
     int DEFAULT_HEIGHT = 50;
 
+    DisplayMetrics metrics = new DisplayMetrics();
+
+
     Activity activity;
     ShineView shineView;
     ValueAnimator shakeAnimator;
@@ -42,6 +46,7 @@ public class ShineButton extends PorterShapeImageView {
     OnCheckedChangeListener listener;
 
     private int bottomHeight;
+    private int realBottomHeight;
 
     public ShineButton(Context context) {
         super(context);
@@ -79,11 +84,15 @@ public class ShineButton extends PorterShapeImageView {
         shineParams.shineTurnAngle = a.getFloat(R.styleable.ShineButton_shine_turn_angle, shineParams.shineTurnAngle);
         shineParams.smallShineColor = a.getColor(R.styleable.ShineButton_small_shine_color, shineParams.smallShineColor);
         shineParams.smallShineOffsetAngle = a.getFloat(R.styleable.ShineButton_small_shine_offset_angle, shineParams.smallShineOffsetAngle);
+        shineParams.shineSize = a.getDimensionPixelSize(R.styleable.ShineButton_shine_size, shineParams.shineSize);
         a.recycle();
         setSrcColor(btnColor);
     }
 
-    public int getBottomHeight() {
+    public int getBottomHeight(boolean real) {
+        if (real) {
+            return realBottomHeight;
+        }
         return bottomHeight;
     }
 
@@ -105,16 +114,28 @@ public class ShineButton extends PorterShapeImageView {
         this.btnFillColor = btnFillColor;
     }
 
-    public void setChecked(boolean checked) {
+    public void setChecked(boolean checked, boolean anim) {
+        setChecked(checked, anim, true);
+    }
+
+    private void setChecked(boolean checked, boolean anim, boolean callBack) {
         isChecked = checked;
         if (checked) {
             setSrcColor(btnFillColor);
             isChecked = true;
+            if (anim) showAnim();
         } else {
             setSrcColor(btnColor);
             isChecked = false;
+            if (anim) setCancel();
         }
-        onListenerUpdate(checked);
+        if (callBack) {
+            onListenerUpdate(checked);
+        }
+    }
+
+    public void setChecked(boolean checked) {
+        setChecked(checked, false, false);
     }
 
     private void onListenerUpdate(boolean checked) {
@@ -126,9 +147,9 @@ public class ShineButton extends PorterShapeImageView {
     public void setCancel() {
         setSrcColor(btnColor);
         if (shakeAnimator != null) {
+            shakeAnimator.end();
             shakeAnimator.cancel();
         }
-        isChecked = false;
     }
 
     public void setAllowRandomColor(boolean allowRandomColor) {
@@ -171,6 +192,10 @@ public class ShineButton extends PorterShapeImageView {
         shineParams.smallShineOffsetAngle = angle;
     }
 
+    public void setShineSize(int size) {
+        shineParams.shineSize = size;
+    }
+
     @Override
     public void setOnClickListener(OnClickListener l) {
         if (l instanceof OnButtonClickListener) {
@@ -199,11 +224,13 @@ public class ShineButton extends PorterShapeImageView {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        DisplayMetrics metrics = new DisplayMetrics();
-        activity.getWindowManager().getDefaultDisplay().getMetrics(metrics);
-        int[] location = new int[2];
-        getLocationInWindow(location);
-        bottomHeight = metrics.heightPixels - location[1];
+        calPixels();
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+
     }
 
     public void showAnim() {
@@ -255,12 +282,12 @@ public class ShineButton extends PorterShapeImageView {
 
             @Override
             public void onAnimationEnd(Animator animator) {
-
+                setSrcColor(isChecked ? btnFillColor : btnColor);
             }
 
             @Override
             public void onAnimationCancel(Animator animator) {
-
+                setSrcColor(btnColor);
             }
 
             @Override
@@ -274,6 +301,18 @@ public class ShineButton extends PorterShapeImageView {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+    }
+
+    private void calPixels() {
+        if (activity != null && metrics != null) {
+            activity.getWindowManager().getDefaultDisplay().getMetrics(metrics);
+            int[] location = new int[2];
+            getLocationInWindow(location);
+            Rect visibleFrame = new Rect();
+            activity.getWindow().getDecorView().getWindowVisibleDisplayFrame(visibleFrame);
+            realBottomHeight = visibleFrame.height() - location[1];
+            bottomHeight = metrics.heightPixels - location[1];
+        }
     }
 
     public class OnButtonClickListener implements OnClickListener {
@@ -296,6 +335,7 @@ public class ShineButton extends PorterShapeImageView {
                 isChecked = true;
                 showAnim();
             } else {
+                isChecked = false;
                 setCancel();
             }
             onListenerUpdate(isChecked);
