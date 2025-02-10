@@ -93,6 +93,10 @@
 
     </LinearLayout>
 
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
     <Button
         android:id="@+id/btn_list_demo"
         android:layout_width="match_parent"
@@ -119,10 +123,10 @@
         android:layout_marginLeft="20dp"
         android:layout_marginRight="20dp"
         android:text="Dialog Demo"
-        android:visibility="gone" />
+        android:visibility="visible" />
 
 
-    <android.support.v7.widget.CardView xmlns:card_view="http://schemas.android.com/apk/res-auto"
+    <androidx.cardview.widget.CardView xmlns:card_view="http://schemas.android.com/apk/res-auto"
         android:id="@+id/card_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -192,5 +196,5 @@
 
 
         </LinearLayout>
-    </android.support.v7.widget.CardView>
+    </androidx.cardview.widget.CardView>
 </LinearLayout>
